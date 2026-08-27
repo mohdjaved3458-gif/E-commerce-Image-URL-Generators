@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-commerce Image URL Generator (Fixed)</title>
-    <!-- ImgBB Upload Plugin Script -->
-    <script async src="https://imgbb.com" data-api="b21c28cf975c9b435a4cbc449b41b27d" data-auto-insert="direct-links" data-sibling="#urlDisplay"></script>
+    <title>E-commerce Image URL Generator (100% Fixed)</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
         .container { max-width: 650px; background: white; margin: 30px auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
@@ -14,9 +12,14 @@
         .info-box { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 6px; text-align: left; margin-bottom: 20px; font-size: 14px; color: #1e40af; }
         .info-box ul { margin: 5px 0 0 20px; padding: 0; }
         .upload-section { background: #f8fafc; border: 2px dashed #cbd5e1; padding: 30px; border-radius: 8px; margin-top: 20px; }
+        input[type="file"] { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; }
+        .upload-btn { background: #2563eb; color: white; padding: 12px 20px; font-size: 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; }
+        .upload-btn:hover { background: #1d4ed8; }
+        .upload-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+        .status { margin-top: 15px; font-weight: bold; color: #2563eb; display: none; }
         .result-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: left; }
         .result-box h3 { margin-top: 0; color: #166534; font-size: 16px; }
-        textarea { width: 100%; height: 70px; padding: 10px; border: 1px solid #cdfaf8; border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 13px; color: #0f766e; background: white; resize: none; }
+        textarea { width: 100%; height: 70px; padding: 10px; border: 1px solid #bbf7d0; border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 13px; color: #0f766e; background: white; resize: none; }
         .copy-btn { background: #10b981; color: white; padding: 10px 20px; font-size: 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
         .copy-btn:hover { background: #059669; }
     </style>
@@ -36,21 +39,67 @@
         </ul>
     </div>
 
-    <!-- Official ImgBB Upload Button Widget -->
     <div class="upload-section">
-        <p style="font-weight: bold; margin-bottom: 15px; color: #475569;">Select and Upload Product Image:</p>
-        <div id="imgbb-upload-wp"></div>
+        <p style="font-weight: bold; margin-bottom: 15px; color: #475569;">Select Product Image:</p>
+        <input type="file" id="imageInput" accept="image/*">
+        <button id="uploadBtn" class="upload-btn" onclick="uploadImage()">Upload & Generate URL</button>
+        <div id="statusText" class="status">Image upload ho rahi hai... Kripya thoda intezar karein.</div>
     </div>
 
     <div class="result-box">
         <h3>📋 Generated Image Link:</h3>
-        <p style="margin: 5px 0; font-size: 13px; color: #4b5563;">Niche diye gaye box mein aapka direct link auto-generate hoga. Use copy karke portal par use karein:</p>
         <textarea id="urlDisplay" readonly placeholder="Image upload karte hi aapka URL yahan aa jayega..."></textarea>
         <button class="copy-btn" onclick="copyUrl()">Copy URL</button>
     </div>
 </div>
 
 <script>
+    const IMGBB_API_KEY = "b21c28cf975c9b435a4cbc449b41b27d";
+
+    function uploadImage() {
+        const fileInput = document.getElementById('imageInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const statusText = document.getElementById('statusText');
+        const urlDisplay = document.getElementById('urlDisplay');
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert("Kripya pehle ek image select karein!");
+            return;
+        }
+
+        uploadBtn.disabled = true;
+        statusText.style.display = "block";
+        urlDisplay.value = "";
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append("image", file);
+
+        // Direct standard API calling without header modification issues
+        fetch(`https://imgbb.com{IMGBB_API_KEY}`, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            uploadBtn.disabled = false;
+            statusText.style.display = "none";
+
+            if (result.success) {
+                // Fetching the secure, direct URL from ImgBB response
+                urlDisplay.value = result.data.url;
+            } else {
+                alert("Upload failed: " + result.error.message);
+            }
+        })
+        .catch(error => {
+            uploadBtn.disabled = false;
+            statusText.style.display = "none";
+            alert("Server se connect nahi ho paye. Kripya apna internet connection check karein.");
+            console.error(error);
+        });
+    }
+
     function copyUrl() {
         const urlText = document.getElementById('urlDisplay').value;
         if(!urlText || urlText.trim() === "" || urlText.startsWith("Image upload")) {
