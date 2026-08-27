@@ -42,7 +42,7 @@
     <div class="upload-section">
         <p style="font-weight: bold; margin-bottom: 15px; color: #475569;">Select Product Image:</p>
         <input type="file" id="imageInput" accept="image/*">
-        <button id="uploadBtn" class="upload-btn" onclick="uploadImage()">Upload & Generate URL</button>
+        <button id="uploadBtn" class="upload-btn" onclick="uploadToImgur()">Upload & Generate URL</button>
         <div id="statusText" class="status">Image upload ho rahi hai... Kripya thoda intezar karein.</div>
     </div>
 
@@ -54,9 +54,7 @@
 </div>
 
 <script>
-    const IMGBB_API_KEY = "b21c28cf975c9b435a4cbc449b41b27d";
-
-    function uploadImage() {
+    function uploadToImgur() {
         const fileInput = document.getElementById('imageInput');
         const uploadBtn = document.getElementById('uploadBtn');
         const statusText = document.getElementById('statusText');
@@ -72,32 +70,46 @@
         urlDisplay.value = "";
 
         const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append("image", file);
+        const reader = new FileReader();
 
-        // Direct standard API calling without header modification issues
-        fetch(`https://imgbb.com{IMGBB_API_KEY}`, {
-            method: "POST",
-            body: formData
-        })
-        .then(response => response.json())
-        .then(result => {
-            uploadBtn.disabled = false;
-            statusText.style.display = "none";
+        reader.onload = function(e) {
+            // Base64 string nikalna bina header ke
+            const base64Data = e.target.result.split(',')[1];
 
-            if (result.success) {
-                // Fetching the secure, direct URL from ImgBB response
-                urlDisplay.value = result.data.url;
-            } else {
-                alert("Upload failed: " + result.error.message);
-            }
-        })
-        .catch(error => {
-            uploadBtn.disabled = false;
-            statusText.style.display = "none";
-            alert("Server se connect nahi ho paye. Kripya apna internet connection check karein.");
-            console.error(error);
-        });
+            const formData = new FormData();
+            formData.append("image", base64Data);
+            formData.append("type", "base64");
+
+            // Imgur ki direct public global API ka upyog
+            fetch("https://imgur.com", {
+                method: "POST",
+                headers: {
+                    Authorization: "Client-ID 546c25a59c58ad7" // Open Anonymous Upload ID
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                uploadBtn.disabled = false;
+                statusText.style.display = "none";
+
+                if (result.success) {
+                    // Direct image link mil gaya
+                    urlDisplay.value = result.data.link;
+                    alert("Badhiya! URL successfully generate ho gaya.");
+                } else {
+                    alert("Upload fail hua: " + (result.data ? result.data.error : "Unknown error"));
+                }
+            })
+            .catch(error => {
+                uploadBtn.disabled = false;
+                statusText.style.display = "none";
+                alert("Network error. Kripya dobara koshish karein.");
+                console.error(error);
+            });
+        };
+
+        reader.readAsDataURL(file);
     }
 
     function copyUrl() {
