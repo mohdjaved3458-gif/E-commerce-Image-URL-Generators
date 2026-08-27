@@ -127,9 +127,10 @@
                 ctx.drawImage(img, x, y, drawW, drawH);
 
                 statusText.innerText = "Uploading to Cloud Storage & Generating URL...";
-                const base64Data = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+                const base64Data = canvas.toDataURL('image/jpeg', 0.9).split(',');
                 
-                uploadToImgBB(base64Data);
+                // Yahan par humne [1] add kiya hai taaki sahi raw data upload ho
+                uploadToImgBB(base64Data[1]);
             };
             img.src = event.target.result;
         };
@@ -178,5 +179,3 @@
     }
 </script>
 
-</body>
-</html>
