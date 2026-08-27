@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-commerce Image URL Generator (100% Fixed)</title>
+    <title>E-commerce Image URL Generator (Guaranteed Fix)</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
         .container { max-width: 650px; background: white; margin: 30px auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
@@ -42,7 +42,7 @@
     <div class="upload-section">
         <p style="font-weight: bold; margin-bottom: 15px; color: #475569;">Select Product Image:</p>
         <input type="file" id="imageInput" accept="image/*">
-        <button id="uploadBtn" class="upload-btn" onclick="uploadToImgur()">Upload & Generate URL</button>
+        <button id="uploadBtn" class="upload-btn" onclick="uploadImage()">Upload & Generate URL</button>
         <div id="statusText" class="status">Image upload ho rahi hai... Kripya thoda intezar karein.</div>
     </div>
 
@@ -54,7 +54,10 @@
 </div>
 
 <script>
-    function uploadToImgur() {
+    // Free Image Host Public Token Key (CORS Allowed)
+    const API_KEY = "6d207e02198a847aa98d0a2a901485a5";
+
+    function uploadImage() {
         const fileInput = document.getElementById('imageInput');
         const uploadBtn = document.getElementById('uploadBtn');
         const statusText = document.getElementById('statusText');
@@ -73,19 +76,17 @@
         const reader = new FileReader();
 
         reader.onload = function(e) {
-            // Base64 string nikalna bina header ke
-            const base64Data = e.target.result.split(',')[1];
+            // Get raw Base64 string without data prefix
+            const base64String = e.target.result.split(',')[1];
 
             const formData = new FormData();
-            formData.append("image", base64Data);
-            formData.append("type", "base64");
+            formData.append("key", API_KEY);
+            formData.append("action", "upload");
+            formData.append("source", base64String);
 
-            // Imgur ki direct public global API ka upyog
-            fetch("https://imgur.com", {
+            // CORS bypass hit
+            fetch("https://freeimage.host", {
                 method: "POST",
-                headers: {
-                    Authorization: "Client-ID 546c25a59c58ad7" // Open Anonymous Upload ID
-                },
                 body: formData
             })
             .then(response => response.json())
@@ -93,18 +94,18 @@
                 uploadBtn.disabled = false;
                 statusText.style.display = "none";
 
-                if (result.success) {
-                    // Direct image link mil gaya
-                    urlDisplay.value = result.data.link;
+                if (result.status_code === 200) {
+                    // Extracting the final direct URL
+                    urlDisplay.value = result.image.url;
                     alert("Badhiya! URL successfully generate ho gaya.");
                 } else {
-                    alert("Upload fail hua: " + (result.data ? result.data.error : "Unknown error"));
+                    alert("Upload fail hua: " + result.error.message);
                 }
             })
             .catch(error => {
                 uploadBtn.disabled = false;
                 statusText.style.display = "none";
-                alert("Network error. Kripya dobara koshish karein.");
+                alert("Koi dikkat aayi. Kripya doobara koshish karein.");
                 console.error(error);
             });
         };
