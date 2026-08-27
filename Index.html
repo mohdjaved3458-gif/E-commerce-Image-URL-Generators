@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce Image URL Generator (Compliant)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 650px; background: white; margin: 30px auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
+        h2 { color: #1e3a8a; margin-bottom: 5px; }
+        p { color: #666; margin-top: 0; font-size: 14px; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        label { font-weight: bold; font-size: 14px; display: block; margin-bottom: 5px; color: #4b5563; }
+        select, input[type="file"], button { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #d1d5db; box-sizing: border-box; font-size: 15px; }
+        select:focus { border-color: #2563eb; outline: none; }
+        button { background: #2563eb; color: white; border: none; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        .status { margin-top: 15px; font-weight: bold; color: #2563eb; display: none; }
+        .result-box { display: none; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: left; }
+        .result-box h3 { margin-top: 0; color: #166534; font-size: 16px; }
+        .url-display { background: white; padding: 10px; border: 1px solid #cdfaf8; border-radius: 4px; word-break: break-all; font-family: monospace; font-size: 13px; color: #0f766e; margin-bottom: 10px; }
+        .copy-btn { background: #10b981; padding: 8px; font-size: 13px; width: auto; display: inline-block; margin: 0; }
+        .copy-btn:hover { background: #059669; }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🛍️ E-com Image URL Generator</h2>
+    <p>Upload image to automatically resize, add white background, and generate compliant URL</p>
+    
+    <div class="form-group">
+        <label for="platform">Target E-commerce Platform:</label>
+        <select id="platform">
+            <option value="amazon">Amazon (1600 x 1600 px | 1:1 Ratio | Pure White BG)</option>
+            <option value="flipkart">Flipkart (1100 x 1100 px | 1:1 Ratio | White BG)</option>
+            <option value="meesho">Meesho (2250 x 2250 px | 1:1 Ratio | Clean BG)</option>
+            <option value="snapdeal">Snapdeal (800 x 800 px | 1:1 Ratio | White BG)</option>
+            <option value="myntra">Myntra (1080 x 1440 px | 3:4 Ratio | Studio BG)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="imageInput">Select Product Image:</label>
+        <input type="file" id="imageInput" accept="image/*">
+    </div>
+
+    <button id="submitBtn" onclick="processAndUpload()">Resize & Generate URL</button>
+
+    <div id="statusText" class="status">Processing Image... Please wait.</div>
+
+    <div id="resultBox" class="result-box">
+        <h3>✅ URL Generated Successfully!</h3>
+        <p style="margin: 5px 0; font-weight: bold; color: #374151;">Image URL (Direct Link):</p>
+        <div id="urlDisplay" class="url-display"></div>
+        <button class="copy-btn" onclick="copyUrl()">Copy URL</button>
+    </div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    // Aapki API Key yahan sahi se jod di gayi hai
+    const IMGBB_API_KEY = "b21c28cf975c9b435a4cbc449b41b27d"; 
+
+    const specs = {
+        amazon: { w: 1600, h: 1600 },
+        flipkart: { w: 1100, h: 1100 },
+        meesho: { w: 2250, h: 2250 },
+        snapdeal: { w: 800, h: 800 },
+        myntra: { w: 1080, h: 1440 }
+    };
+
+    function processAndUpload() {
+        const fileInput = document.getElementById('imageInput');
+        const platform = document.getElementById('platform').value;
+        const submitBtn = document.getElementById('submitBtn');
+        const statusText = document.getElementById('statusText');
+        const resultBox = document.getElementById('resultBox');
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert("Kripya pehle ek product image select karein!");
+            return;
+        }
+
+        submitBtn.disabled = true;
+        statusText.style.display = "block";
+        resultBox.style.display = "none";
+        statusText.innerText = "Resizing image to match guidelines...";
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                const targetW = specs[platform].w;
+                const targetH = specs[platform].h;
+                
+                canvas.width = targetW;
+                canvas.height = targetH;
+
+                ctx.fillStyle = "#FFFFFF";
+                ctx.fillRect(0, 0, targetW, targetH);
+
+                const imgRatio = img.width / img.height;
+                const targetRatio = targetW / targetH;
+                let drawW, drawH, x, y;
+
+                if (imgRatio > targetRatio) {
+                    drawW = targetW;
+                    drawH = targetW / imgRatio;
+                    x = 0;
+                    y = (targetH - drawH) / 2;
+                } else {
+                    drawW = targetH * imgRatio;
+                    drawH = targetH;
+                    x = (targetW - drawW) / 2;
+                    y = 0;
+                }
+
+                ctx.drawImage(img, x, y, drawW, drawH);
+
+                statusText.innerText = "Uploading to Cloud Storage & Generating URL...";
+                const base64Data = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+                
+                uploadToImgBB(base64Data);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function uploadToImgBB(base64Image) {
+        const statusText = document.getElementById('statusText');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultBox = document.getElementById('resultBox');
+        const urlDisplay = document.getElementById('urlDisplay');
+
+        const formData = new FormData();
+        formData.append("image", base64Image);
+
+        fetch(`https://imgbb.com{IMGBB_API_KEY}`, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+            submitBtn.disabled = false;
+            statusText.style.display = "none";
+            
+            if (result.success) {
+                const directUrl = result.data.url;
+                urlDisplay.innerText = directUrl;
+                resultBox.style.display = "block";
+            } else {
+                alert("Upload failed: " + result.error.message);
+            }
+        })
+        .catch(error => {
+            submitBtn.disabled = false;
+            statusText.style.display = "none";
+            alert("Error connecting to server. Please try again.");
+            console.error(error);
+        });
+    }
+
+    function copyUrl() {
+        const urlText = document.getElementById('urlDisplay').innerText;
+        navigator.clipboard.writeText(urlText).then(() => {
+            alert("URL copy ho gaya hai!");
+        });
+    }
+</script>
+
+</body>
+</html>
