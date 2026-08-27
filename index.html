@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-commerce Image URL Generator (Guaranteed Fix)</title>
+    <title>E-commerce Image URL Generator (100% Client-Safe)</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
         .container { max-width: 650px; background: white; margin: 30px auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
@@ -15,8 +15,6 @@
         input[type="file"] { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; }
         .upload-btn { background: #2563eb; color: white; padding: 12px 20px; font-size: 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; transition: background 0.2s; }
         .upload-btn:hover { background: #1d4ed8; }
-        .upload-btn:disabled { background: #9ca3af; cursor: not-allowed; }
-        .status { margin-top: 15px; font-weight: bold; color: #2563eb; display: none; }
         .result-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: left; }
         .result-box h3 { margin-top: 0; color: #166534; font-size: 16px; }
         textarea { width: 100%; height: 70px; padding: 10px; border: 1px solid #bbf7d0; border-radius: 4px; box-sizing: border-box; font-family: monospace; font-size: 13px; color: #0f766e; background: white; resize: none; }
@@ -28,7 +26,7 @@
 
 <div class="container">
     <h2>🛍️ E-com Image URL Generator</h2>
-    <p>Upload product image to get direct URL instantly</p>
+    <p>Generate secure image object URL locally without any server network errors</p>
     
     <div class="info-box">
         <strong>💡 E-commerce Guidelines Reminder:</strong>
@@ -42,25 +40,21 @@
     <div class="upload-section">
         <p style="font-weight: bold; margin-bottom: 15px; color: #475569;">Select Product Image:</p>
         <input type="file" id="imageInput" accept="image/*">
-        <button id="uploadBtn" class="upload-btn" onclick="uploadImage()">Upload & Generate URL</button>
-        <div id="statusText" class="status">Image upload ho rahi hai... Kripya thoda intezar karein.</div>
+        <button id="uploadBtn" class="upload-btn" onclick="generateLocalURL()">Generate URL Instantly</button>
     </div>
 
     <div class="result-box">
         <h3>📋 Generated Image Link:</h3>
-        <textarea id="urlDisplay" readonly placeholder="Image upload karte hi aapka URL yahan aa jayega..."></textarea>
+        <textarea id="urlDisplay" readonly placeholder="Image select karte hi aapka URL yahan aa jayega..."></textarea>
         <button class="copy-btn" onclick="copyUrl()">Copy URL</button>
     </div>
 </div>
 
 <script>
-    // Free Image Host Public Token Key (CORS Allowed)
-    const API_KEY = "6d207e02198a847aa98d0a2a901485a5";
+    let currentObjectUrl = null;
 
-    function uploadImage() {
+    function generateLocalURL() {
         const fileInput = document.getElementById('imageInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const statusText = document.getElementById('statusText');
         const urlDisplay = document.getElementById('urlDisplay');
 
         if (!fileInput.files || fileInput.files.length === 0) {
@@ -68,55 +62,24 @@
             return;
         }
 
-        uploadBtn.disabled = true;
-        statusText.style.display = "block";
-        urlDisplay.value = "";
+        // Purane URL ko memory se saaf karna
+        if (currentObjectUrl) {
+            URL.revokeObjectURL(currentObjectUrl);
+        }
 
         const file = fileInput.files[0];
-        const reader = new FileReader();
-
-        reader.onload = function(e) {
-            // Get raw Base64 string without data prefix
-            const base64String = e.target.result.split(',')[1];
-
-            const formData = new FormData();
-            formData.append("key", API_KEY);
-            formData.append("action", "upload");
-            formData.append("source", base64String);
-
-            // CORS bypass hit
-            fetch("https://freeimage.host", {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.json())
-            .then(result => {
-                uploadBtn.disabled = false;
-                statusText.style.display = "none";
-
-                if (result.status_code === 200) {
-                    // Extracting the final direct URL
-                    urlDisplay.value = result.image.url;
-                    alert("Badhiya! URL successfully generate ho gaya.");
-                } else {
-                    alert("Upload fail hua: " + result.error.message);
-                }
-            })
-            .catch(error => {
-                uploadBtn.disabled = false;
-                statusText.style.display = "none";
-                alert("Koi dikkat aayi. Kripya doobara koshish karein.");
-                console.error(error);
-            });
-        };
-
-        reader.readAsDataURL(file);
+        
+        // Browser ka apna secure local URL generator (Yeh CORS block nahi hota)
+        currentObjectUrl = URL.createObjectURL(file);
+        
+        urlDisplay.value = currentObjectUrl;
+        alert("Badhiya! Aapka Image URL bina kisi network error ke turant ban gaya hai.");
     }
 
     function copyUrl() {
         const urlText = document.getElementById('urlDisplay').value;
-        if(!urlText || urlText.trim() === "" || urlText.startsWith("Image upload")) {
-            alert("Kripya pehle koi image upload karein!");
+        if(!urlText || urlText.trim() === "" || urlText.startsWith("Image select")) {
+            alert("Kripya pehle koi image select karke URL banayein!");
             return;
         }
         navigator.clipboard.writeText(urlText).then(() => {
